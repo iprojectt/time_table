@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Timetable Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #6868b7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .title {
+            font-size: 2em;
+            text-align: center;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: center; /* Center the content of form-group */
+        }
+
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 100% ;
+            max-width: 400px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+        }
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+        .form-group button#generateTimetableButton {
+        display: none; /* Hide the Generate Timetable button initially */
+    }
+
+    .form-group button#screenshotButton {
+        display: none; /* Hide the Generate Timetable button initially */
+    }
+
+        .timetable-wrapper{
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: none;
+        }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            /* overflow-x: auto; */
+            /* display: block; */
+        }
+        th, td {
+            border: 1px solid #ddd;
+            text-align: center;
+            padding: 12px;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 1.5em; /* Adjust title font size for mobile */
+            }
+            .form-group input[type="text"],
+            .form-group input[type="number"] {
+                max-width: 100%; /* Ensure inputs use full width on mobile */
+                margin-bottom: 10px; /* Add gap between inputs and button on mobile */
+            }
+        }
+
+
+
+
+
+
+        /* .download-link {
+            display: block;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2em;
+            color: #000000;
+            text-decoration: none;
+            font-weight: 500;
+        } */
+        /* .download-link:hover {
+            text-decoration: underline;
+        } */
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> -->
+    
+</head>
+<body>
+
+<div class="container">
+    <div class="title">Customized Time Table</div>
+
+    <div class="form-group">
+        <label for="numCourses">Number of Courses:</label>
+        <input type="number" id="numCourses" min="1" required>
+        <button id="generateFieldsButton" onclick="generateInputFields()">Generate Fields</button>
+    </div>
+
+    <div id="courseFields"></div>
+
+    <div class="form-group">
+        <button id="generateTimetableButton" onclick="generateTimetable()">Generate Timetable</button>
+    </div>
+
+    <div id="timetableContainer" class="timetable-wrapper"></div>
+
+    <!-- Datalist for course suggestions -->
+    <datalist id="courseSuggestions"></datalist>
+
+
+    <div class="form-group">
+        <button id="screenshotButton">Download PDF</button>
+    </div>
+
+    
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+   const allCourses = [
+        'Blockchain and Web3 Development', 
+        'Data Analytics I', 
+        'Earthquake Resistant Design of Masonry Structures', 
+        'Probability and Random Processes (PRP)', 
+        'Thinking and Knowing in the Human Sciences – III', 
+        'CMOS References and Regulators',
+        'Introduction to Biology', 
+        'Introduction to Quantum Field Theory', 
+        'Operating Systems and Networks (OSN)', 
+        'Signal Processing', 
+        'Structural Dynamics', 
+        'Topics in Nanosciences', 
+        'Retrofit of Existing Infrastructure(H2)', 
+        'Software Systems Development (SSD)',
+        'Advanced Computer Architecture (ACA)', 
+        'Behavioral Research & Experimental Design (BRED)', 
+        'Digital Image Processing (DIP)', 
+        'Distributed Systems', 
+        'Environmental Science & Technology', 
+        'Language and Society', 
+        'Theory of Elasticity', 
+        'Science 1', 
+        'Quantum Mechanics', 
+        'Hydrological Modelling and Software Development',
+        'Learning and Memory', 
+        'Structural Engineering Design Studio (SEDS)', 
+        'Topics in Applied Optimization (TAO)', 
+        'Quantum Information Theory', 
+        'Open Quantum Systems and Quantum Thermodynamics',
+        'Advanced Computer Networks (ACN)', 
+        'Automata Theory (H1)', 
+        'Bioinformatics (H1)', 
+        'Data and Applications (H2)', 
+        'Information Theory', 
+        'Introduction to Remote Sensing', 
+        'MCS 1 - Probability and Statistics (H1)', 
+        'MCS 2 - Linear Algebra (H2)', 
+        'Structural Safety of Built Infrastructure', 
+        'Systems Biology (H2)', 
+        'Principles of Semiconductor Devices', 
+        'Information Retrieval & Extraction', 
+        'Wireless Communications',
+        'Introduction to Economics', 
+        'Introduction to Film Studies', 
+        'Intro to Psychology',
+        'Advanced Operating Systems', 
+        'Chemistry Topics for Engineers', 
+        'Computer Problem Solving', 
+        'Physics of the Early Universe', 
+        'Software Quality Engineering',
+        'Advanced Design of Steel Structures', 
+        'Algorithm Analysis and Design', 
+        'Chemical Kinetics and Reaction Dynamics (H2)', 
+        'Computational Linguistics II', 
+        'Design for Testability (DFT)', 
+        'Fairness, Privacy and Ethics in AI', 
+        'Foundations for Signal Processing and Communication', 
+        'Modern Complexity Theory', 
+        'Spectroscopy(H1)', 
+        'Spatial Informatics',
+        'Applied Ethics', 
+        'Biomolecular Structure Interaction & Dynamics', 
+        'Data Structures & Algorithms for Problem Solving', 
+        'Entropy and Information', 
+        'Finite Element Methods', 
+        'Thinking and Knowing in the Human Sciences – II', 
+        'Geospatial Technology for Disaster Risk Modelling',
+        'Algorithms and Operating Systems (OSA)', 
+        'IoT Workshop', 
+        'Introduction to Cognitive Science', 
+        'Introduction to Neural and Cognitive Modeling', 
+        'Mobile Robotics', 
+        'Research in Information Security', 
+        'Signal Detection and Estimation Theory', 
+        'Systems Thinking', 
+        'Design for Social Innovation', 
+        'Speech Analysis and Linguistics',
+        'Basics of Ethics (H1)', 
+        'Gender and Society', 
+        'Introduction to Philosophy', 
+        'Music Workshop', 
+        'Introduction to Politics', 
+        'CASE Seminar', 
+        'Human Computer Interaction (H2)',
+        'Statistical Methods in AI (SMAI)',
+        'Basics of Ethics (H2)', 
+        'Introduction to History', 
+        'Work Entrepreneurship and Technology in Contemporary Societies', 
+        'Readings from Hindi Literature', 
+        'Design Thinking - Research to Define (H1)', 
+        'Design Thinking - Idea to Evaluate (H2)',
+        'Advanced NLP', 
+        'Digital VLSI Design (DVD)', 
+        'Modern Coding Theory', 
+        'Probability and Statistics', 
+        'VLSI Design', 
+        'Principles of Programming Languages', 
+        'Robotics: Dynamics and Control', 
+        'Product Management 101 (H1)', 
+        'User Research Methods (H2)',
+        'Business Fundamentals',
+        'Embedded Systems Workshop (ESW) (H)',
+        'Science Lab I (H1)', 
+        'Product Marketing'
+    ];
+
+
+    const timetableHTML = `
+    <div class="title">Lecture timetable for the courses of Monsoon 2024</div>
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                <th>8:30-9:55AM</th>
+                <th>10:05-11:30AM</th>
+                <th>11:40-1:05PM</th>
+                <th>2:00-3:25PM</th>
+                <th>3:35-5:00PM</th>
+                <th>5:10-6:40PM</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>Mon</th>
+            <td>Blockchain and Web3 Development, Data Analytics I, Earthquake Resistant Design of Masonry Structures, Probability and Random Processes (PRP), Thinking and Knowing in the Human Sciences – III, CMOS References and Regulators </td>
+            <td>Introduction to Biology, Introduction to Quantum Field Theory, Operating Systems and Networks (OSN), Signal Processing, Structural Dynamics, Topics in Nanosciences, Retrofit of Existing Infrastructure(H2), Software Systems Development (SSD)</td>
+            <td>Advanced Computer Architecture (ACA), Behavioral Research & Experimental Design (BRED), Digital Image Processing (DIP), Distributed Systems, Environmental Science & Technology, Language and Society, Theory of Elasticity, Science 1, Quantum Mechanics, Hydrological modelling and Software Development</td>
+            <td>Learning and Memory, Structural Engineering Design Studio, Topics in Applied Optimization (TAO), Quantum Information Theory, Open Quantum Systems and Quantum Thermodynamics</td>
+            <td>Advanced Computer Networks (ACN), Automata Theory (H1), Bioinformatics (H1), Data and Applications (H2), Information Theory, Introduction to Remote Sensing MCS 1-Probability and Statistics (H1), MCS 2 - Linear Algebra (H2), Structural Safety of Built Infrastructure, Systems Biology (H2), Principles of Semiconductor Devices, Information Retrieval & Extraction, Wireless Communications</td>
+            <td>Introduction to Economics, Introduction to Film Studies, Intro to Psychology</td>
+        </tr>
+        <tr>
+            <th>Tue</th>
+            <td>Advanced Operating Systems, Chemistry Topics for Engineers, Computer Problem Solving, Physics of the Early Universe, Software Quality Engineering</td>
+            <td>Advanced Design of Steel Structures, Algorithm Analysis and Design, Chemical Kinetics and Reaction Dynamics (H2), Computational Linguistics II, Design for Testability (DFT), Fairness, Privacy and Ethics in AI, Foundations for Signal Processing and Communication, Modern Complexity Theory, Spectroscopy(H1), Spatial Informatics</td>
+            <td>Applied Ethics, Biomolecular Structure Interaction & Dynamics, Data Structures & Algorithms for Problem Solving, Entropy and Information, Finite Element Methods, Thinking and Knowing in the Human Sciences – II, Geospatial Technology for Disaster Risk Modelling</td>
+            <td>Algorithms and Operating Systems (OSA), IoT Workshop, Introduction to Cognitive Science, Introduction to Neural and Cognitive Modeling, Mobile Robotics, Signal Detection and Estimation Theory, Systems Thinking, Design for Social Innovation, Speech Analysis and Linguistics</td>
+            
+            
+            <td>Basics of Ethics (H1), Gender and Society, Introduction to Philosophy, Research in Information Security, Music Workshop, Introduction to Politics</td>
+            <td>Statistical Methods in AI (SMAI)</td>
+            </tr>
+        <!-- New Row with Combined Columns -->
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td colspan="2">Embedded Systems Workshop (ESW) (H), Science Lab I (H1)</td> <!-- Combine "2:00-3:35PM" and "3:35-5:00PM" into one cell -->
+            <td></td>
+        </tr>
+        </tr>
+
+        <tr>
+            <th>Wed</th>
+            <td>Basics of Ethics (H2), Introduction to History, Work Entrepreneurship and Technology in Contemporary Societies, Readings from Hindi Literature, Design Thinking - Research to Define (H1), Design Thinking - Idea to Evaluate (H2)</td>
+            <td>Advanced NLP, Digital VLSI Design (DVD), Modern Coding Theory, Probability and Statistics, VLSI Design, Principles of Programming Languages, Robotics: Dynamics and Control, Product Management 101 (H1), User Research Methods (H2), Product Marketing</td>
+            <td>Human Computer Interaction (H2)</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th>Thu</th>
+            <td>Blockchain and Web3 Development, Data Analytics I, Earthquake Resistant Design of Masonry Structures, Probability and Random Processes (PRP), Thinking and Knowing in the Human Sciences – III, CMOS References and Regulators</td>
+            <td>Introduction to Biology, Introduction to Quantum Field Theory, Operating Systems and Networks (OSN), Signal Processing, Structural Dynamics, Topics in Nanosciences, Retrofit of Existing Infrastructure(H2), Software Systems Development (SSD)</td>
+            <td>Advanced Computer Architecture (ACA), Behavioral Research & Experimental Design (BRED), Digital Image Processing (DIP), Distributed Systems, Environmental Science & Technology, Language and Society, Theory of Elasticity, Science 1, Quantum Mechanics, Hydrological modelling and Software Development</td>
+            <td>Learning and Memory, Structural Engineering Design Studio, Topics in Applied Optimization (TAO), Quantum Information Theory, Open Quantum Systems and Quantum Thermodynamics</td>
+            <td>Advanced Computer Networks (ACN), Automata Theory (H1), Bioinformatics (H1), Data and Applications (H2), Information Theory, Introduction to Remote Sensing MCS 1-Probability and Statistics (H1), MCS 2 - Linear Algebra (H2), Structural Safety of Built Infrastructure, Systems Biology (H2), Principles of Semiconductor Devices, Information Retrieval & Extraction, Wireless Communications</td>
+            <td>Introduction to Economics, Introduction to Film Studies, Intro to Psychology</td>
+        </tr>
+        <tr>
+            <th>Fri</th>
+            <td>Advanced Operating Systems, Chemistry Topics for Engineers, Computer Problem Solving, Physics of the Early Universe, Software Quality Engineering</td>
+            <td>Advanced Design of Steel Structures, Algorithm Analysis and Design, Chemical Kinetics and Reaction Dynamics (H2), Computational Linguistics II, Design for Testability (DFT), Fairness, Privacy and Ethics in AI, Foundations for Signal Processing and Communication, Modern Complexity Theory, Spectroscopy(H1), Spatial Informatics</td>
+            <td>Applied Ethics, Biomolecular Structure Interaction & Dynamics, Data Structures & Algorithms for Problem Solving, Entropy and Information, Finite Element Methods, Thinking and Knowing in the Human Sciences – II, Geospatial Technology for Disaster Risk Modelling</td>
+            <td>Algorithms and Operating Systems (OSA), IoT Workshop, Introduction to Cognitive Science, Introduction to Neural and Cognitive Modeling, Mobile Robotics, Signal Detection and Estimation Theory, Systems Thinking, Design for Social Innovation, Speech Analysis and Linguistics</td>
+            <td>Basics of Ethics (H1), Gender and Society, Introduction to Philosophy, Research in Information Security, Music Workshop, Introduction to Politics, CASE Seminar</td>
+            <td>Statistical Methods in AI (SMAI)</td>
+        </tr>
+        <tr>
+            <th>Sat</th>
+            <td>Basics of Ethics (H2), Introduction to History, Work Entrepreneurship and Technology in Contemporary Societies, Readings from Hindi Literature, Design Thinking - Research to Define (H1), Design Thinking - Idea to Evaluate (H2)</td>
+            <td>Advanced NLP, Digital VLSI Design (DVD), Modern Coding Theory, Probability and Statistics, VLSI Design, Principles of Programming Languages, Robotics: Dynamics and Control, Product Management 101 (H1), User Research Methods (H2), Product Marketing</td>
+            <td>Human Computer Interaction (H2)</td>
+            <td colspan="2">Business Fundamentals</td>
+            
+            <td></td>
+        </tr>
+        </tbody>
+    </table>
+    
+    `;
+
+    function generateInputFields() {
+        const numCourses = document.getElementById('numCourses').value;
+        const courseFields = document.getElementById('courseFields');
+        courseFields.innerHTML = '';
+
+        for (let i = 0; i < numCourses; i++) {
+            const fieldGroup = document.createElement('div');
+            fieldGroup.classList.add('form-group');
+
+            const label = document.createElement('label');
+            label.textContent = `Course ${i + 1}:`;
+            fieldGroup.appendChild(label);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.classList.add('courseInput');
+            input.setAttribute('list', 'courseSuggestions');
+            input.addEventListener('input', showSuggestions);
+            fieldGroup.appendChild(input);
+
+            courseFields.appendChild(fieldGroup);
+        }
+
+        document.getElementById('generateTimetableButton').style.display = 'inline-block';
+    }
+
+    function showSuggestions(event) {
+    const input = event.target;
+    const value = input.value.toLowerCase();
+    const suggestions = document.getElementById('courseSuggestions');
+
+    suggestions.innerHTML = '';
+    input.setCustomValidity(''); // Clear previous custom validation messages
+
+    if (value) {
+        const filteredCourses = allCourses.filter(course => 
+            course.toLowerCase().includes(value)
+        );
+
+        if (filteredCourses.length > 0) {
+            filteredCourses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course;
+                suggestions.appendChild(option);
+            });
+        } else {
+            // Set a custom validation message if no matches are found
+            input.setCustomValidity('Course not Found');
+        }
+    }
+    input.reportValidity(); // Trigger the custom validity message if any
+}
+
+
+
+
+function hasInvalidCourses() {
+    const courseInputs = document.querySelectorAll('.courseInput');
+    let hasInvalid = false;
+
+    courseInputs.forEach(input => {
+        if (input.validationMessage) { // Check if there's a custom validation message
+            hasInvalid = true;
+        }
+    });
+
+    return hasInvalid;
+}
+
+
+
+
+
+
+
+
+    function generateTimetable() {
+
+     
+
+        if (hasInvalidCourses()) {
+        alert('Please correct all "Course not Found" errors before generating the timetable.');
+        return; // Stop execution if there are invalid inputs
+    }
+
+    
+    const courseInputs = document.querySelectorAll('.courseInput');
+    const courses = Array.from(courseInputs).map(input => input.value.trim());
+
+
+    let filteredTimetable = timetableHTML;
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(filteredTimetable, 'text/html');
+    const rows = dom.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+
+            if (cell.textContent.trim()) {
+                    const cellCourses = cell.textContent.split(',').map(course => course.trim());
+                    const matchingCourses = cellCourses.filter(course => courses.includes(course));
+
+
+                     
+            // Modify "Systems Thinking" to "Systems Thinking a"
+            // Modify course names based on specific conditions
+            for (let i = 0; i < matchingCourses.length; i++) {
+                 if (matchingCourses[i] === "Blockchain and Web3 Development") {
+                    matchingCourses[i] = "Blockchain and Web3 Development <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Data Analytics I") {
+                    matchingCourses[i] = "Data Analytics I <b>(H205)</b>";
+                } else if (matchingCourses[i] === "Earthquake Resistant Design of Masonry Structures") {
+                    matchingCourses[i] = "Earthquake Resistant Design of Masonry Structures <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Probability and Random Processes") {
+                    matchingCourses[i] = "Probability and Random Processes <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Thinking and Knowing in the Human Sciences – III") {
+                    matchingCourses[i] = "Thinking and Knowing in the Human Sciences – III <b>(H201)</b>";
+                } else if (matchingCourses[i] === "CMOS References and Regulators") {
+                    matchingCourses[i] = "CMOS References and Regulators <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Introduction to Biology") {
+                    matchingCourses[i] = "Introduction to Biology <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Introduction to Quantum Field Theory") {
+                    matchingCourses[i] = "Introduction to Quantum Field Theory <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Operating Systems and Networks (OSN)") {
+                    matchingCourses[i] = "Operating Systems and Networks (OSN) <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Signal Processing") {
+                    matchingCourses[i] = "Signal Processing <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Structural Dynamics") {
+                    matchingCourses[i] = "Structural Dynamics <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Topics in Nanosciences") {
+                    matchingCourses[i] = "Topics in Nanosciences <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Retrofit of Existing Infrastructure(H2)") {
+                    matchingCourses[i] = "Retrofit of Existing Infrastructure(H2) <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Software Systems Development (SSD)") {
+                    matchingCourses[i] = "Software Systems Development (SSD) <b>(H205)</b>";
+                } else if (matchingCourses[i] === "Advanced Computer Architecture (ACA)") {
+                    matchingCourses[i] = "Advanced Computer Architecture (ACA) <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Behavioral Research & Experimental Design (BRED)") {
+                    matchingCourses[i] = "Behavioral Research & Experimental Design (BRED) <b>(H302)</b>";
+                } else if (matchingCourses[i] === "Digital Image Processing (DIP)") {
+                    matchingCourses[i] = "Digital Image Processing (DIP) <b>(H205)</b>";
+                } else if (matchingCourses[i] === "Distributed Systems") {
+                    matchingCourses[i] = "Distributed Systems <b>(CR1)</b>";
+                } else if (matchingCourses[i] === "Environmental Science & Technology") {
+                    matchingCourses[i] = "Environmental Science & Technology <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Language and Society") {
+                    matchingCourses[i] = "Language and Society <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Theory of Elasticity") {
+                    matchingCourses[i] = "Theory of Elasticity <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Science 1") {
+                    matchingCourses[i] = "Science 1 <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Quantum Mechanics") {
+                    matchingCourses[i] = "Quantum Mechanics <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Hydrological Modelling and Software Development") {
+                    matchingCourses[i] = "Hydrological Modelling and Software Development <b>(H203)</b>";
+                } else if (matchingCourses[i] === "Learning and Memory") {
+                    matchingCourses[i] = "Learning and Memory <b>(H205)</b>";
+                } else if (matchingCourses[i] === "Structural Engineering Design Studio (SEDS)") {
+                    matchingCourses[i] = "Structural Engineering Design Studio (SEDS) <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Topics in Applied Optimization (TAO)") {
+                    matchingCourses[i] = "Topics in Applied Optimization (TAO) <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Quantum Information Theory") {
+                    matchingCourses[i] = "Quantum Information Theory <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Open Quantum Systems and Quantum Thermodynamics") {
+                    matchingCourses[i] = "Open Quantum Systems and Quantum Thermodynamics <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Advanced Computer Networks (ACN)") {
+                    matchingCourses[i] = "Advanced Computer Networks (ACN) <b>(SH2)</b>";
+                } else if (matchingCourses[i] === "Automata Theory (H1)") {
+                    matchingCourses[i] = "Automata Theory (H1) <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Bioinformatics (H1)") {
+                    matchingCourses[i] = "Bioinformatics (H1) <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Data and Applications (H2)") {
+                    matchingCourses[i] = "Data and Applications (H2) <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Information Theory") {
+                    matchingCourses[i] = "Information Theory <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Introduction to Remote Sensing") {
+                    matchingCourses[i] = "Introduction to Remote Sensing <b>(H201)</b>";
+                } else if (matchingCourses[i] === "MCS 1 - Probability and Statistics (H1)") {
+                    matchingCourses[i] = "MCS 1 - Probability and Statistics (H1) <b>(H104)</b>";
+                } else if (matchingCourses[i] === "MCS 2 - Linear Algebra (H2)") {
+                    matchingCourses[i] = "MCS 2 - Linear Algebra (H2) <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Structural Safety of Built Infrastructure") {
+                    matchingCourses[i] = "Structural Safety of Built Infrastructure <b>(H302)</b>";
+                } else if (matchingCourses[i] === "Systems Biology (H2)") {
+                    matchingCourses[i] = "Systems Biology (H2) <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Principles of Semiconductor Devices") {
+                    matchingCourses[i] = "Principles of Semiconductor Devices <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Information Retrieval & Extraction") {
+                    matchingCourses[i] = "Information Retrieval & Extraction <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Wireless Communications") {
+                    matchingCourses[i] = "Wireless Communications <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Introduction to Economics") {
+                    matchingCourses[i] = "Introduction to Economics <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Introduction to Film Studies") {
+                    matchingCourses[i] = "Introduction to Film Studies <b>(N328)</b>";
+                } else if (matchingCourses[i] === "Intro to Psychology") {
+                    matchingCourses[i] = "Intro to Psychology <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Advanced Operating Systems") {
+                    matchingCourses[i] = "Advanced Operating Systems <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Chemistry Topics for Engineers") {
+                    matchingCourses[i] = "Chemistry Topics for Engineers <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Computer Problem Solving") {
+                    matchingCourses[i] = "Computer Problem Solving <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Physics of the Early Universe") {
+                    matchingCourses[i] = "Physics of the Early Universe <b>(H203)</b>";
+                } else if (matchingCourses[i] === "Software Quality Engineering") {
+                    matchingCourses[i] = "Software Quality Engineering <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Advanced Design of Steel Structures") {
+                    matchingCourses[i] = "Advanced Design of Steel Structures <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Algorithm Analysis and Design") {
+                    matchingCourses[i] = "Algorithm Analysis and Design <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Chemical Kinetics and Reaction Dynamics (H2)") {
+                    matchingCourses[i] = "Chemical Kinetics and Reaction Dynamics (H2) <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Computational Linguistics II") {
+                    matchingCourses[i] = "Computational Linguistics II <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Design for Testability (DFT)") {
+                    matchingCourses[i] = "Design for Testability (DFT) <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Fairness, Privacy and Ethics in AI") {
+                    matchingCourses[i] = "Fairness, Privacy and Ethics in AI <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Foundations for Signal Processing and Communication") {
+                    matchingCourses[i] = "Foundations for Signal Processing and Communication <b>(H203)</b>";
+                } else if (matchingCourses[i] === "Modern Complexity Theory") {
+                    matchingCourses[i] = "Modern Complexity Theory <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Spectroscopy(H1)") {
+                    matchingCourses[i] = "Spectroscopy(H1) <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Spatial Informatics") {
+                    matchingCourses[i] = "Spatial Informatics <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Applied Ethics") {
+                    matchingCourses[i] = "Applied Ethics <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Biomolecular Structure Interaction & Dynamics") {
+                    matchingCourses[i] = "Biomolecular Structure Interaction & Dynamics <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Data Structures & Algorithms for Problem Solving") {
+                    matchingCourses[i] = "Data Structures & Algorithms for Problem Solving <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Entropy and Information") {
+                    matchingCourses[i] = "Entropy and Information <b>(H302)</b>";
+                } else if (matchingCourses[i] === "Finite Element Methods") {
+                    matchingCourses[i] = "Finite Element Methods <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Thinking and Knowing in the Human Sciences – II") {
+                    matchingCourses[i] = "Thinking and Knowing in the Human Sciences – II <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Geospatial Technology for Disaster Risk Modelling") {
+                    matchingCourses[i] = "Geospatial Technology for Disaster Risk Modelling <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Algorithms and Operating Systems (OSA)") {
+                    matchingCourses[i] = "Algorithms and Operating Systems (OSA) <b>(H104)</b>";
+                } else if (matchingCourses[i] === "IoT Workshop") {
+                    matchingCourses[i] = "IoT Workshop <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Introduction to Cognitive Science") {
+                    matchingCourses[i] = "Introduction to Cognitive Science <b>(H204)</b>";
+                } else if (matchingCourses[i] === "Introduction to Neural and Cognitive Modeling") {
+                    matchingCourses[i] = "Introduction to Neural and Cognitive Modeling <b>(H203)</b>";
+                } else if (matchingCourses[i] === "Mobile Robotics") {
+                    matchingCourses[i] = "Mobile Robotics <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Research in Information Security") {
+                    matchingCourses[i] = "Research in Information Security <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Signal Detection and Estimation Theory") {
+                    matchingCourses[i] = "Signal Detection and Estimation Theory <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Systems Thinking") {
+                    matchingCourses[i] = "Systems Thinking <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Design for Social Innovation") {
+                    matchingCourses[i] = "Design for Social Innovation <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Speech Analysis and Linguistics") {
+                    matchingCourses[i] = "Speech Analysis and Linguistics <b>(H302)</b>";
+                } else if (matchingCourses[i] === "Basics of Ethics (H1)") {
+                    matchingCourses[i] = "Basics of Ethics (H1) <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Gender and Society") {
+                    matchingCourses[i] = "Gender and Society <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Introduction to Philosophy") {
+                    matchingCourses[i] = "Introduction to Philosophy <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Music Workshop") {
+                    matchingCourses[i] = "Music Workshop <b>(N305 / N328)</b>";
+                } else if (matchingCourses[i] === "Introduction to Politics") {
+                    matchingCourses[i] = "Introduction to Politics <b>(H201)</b>";
+                } else if (matchingCourses[i] === "CASE Seminar") {
+                    matchingCourses[i] = "CASE Seminar <b></b>";
+                } else if (matchingCourses[i] === "Human Computer Interaction (H2)") {
+                    matchingCourses[i] = "Human Computer Interaction (H2) <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Statistical Methods in AI (SMAI)") {
+                    matchingCourses[i] = "Statistical Methods in AI (SMAI) <b>(H105)</b>";
+                } else if (matchingCourses[i] === "Basics of Ethics (H2)") {
+                    matchingCourses[i] = "Basics of Ethics (H2) <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Introduction to History") {
+                    matchingCourses[i] = "Introduction to History <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Work Entrepreneurship and Technology in Contemporary Societies") {
+                    matchingCourses[i] = "Work Entrepreneurship and Technology in Contemporary Societies <b>(H103)</b>";
+                } else if (matchingCourses[i] === "Readings from Hindi Literature") {
+                    matchingCourses[i] = "Readings from Hindi Literature <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Design Thinking - Research to Define (H1)") {
+                    matchingCourses[i] = "Design Thinking - Research to Define (H1) <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Design Thinking - Idea to Evaluate (H2)") {
+                    matchingCourses[i] = "Design Thinking - Idea to Evaluate (H2) <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Advanced NLP") {
+                    matchingCourses[i] = "Advanced NLP <b>(H205)</b>";
+                } else if (matchingCourses[i] === "Digital VLSI Design (DVD)") {
+                    matchingCourses[i] = "Digital VLSI Design (DVD) <b>(H203)</b>";
+                } else if (matchingCourses[i] === "Modern Coding Theory") {
+                    matchingCourses[i] = "Modern Coding Theory <b>(H301)</b>";
+                } else if (matchingCourses[i] === "Probability and Statistics") {
+                    matchingCourses[i] = "Probability and Statistics <b>(H105)</b>";
+                } else if (matchingCourses[i] === "VLSI Design") {
+                    matchingCourses[i] = "VLSI Design <b>(H104)</b>";
+                } else if (matchingCourses[i] === "Principles of Programming Languages") {
+                    matchingCourses[i] = "Principles of Programming Languages <b>(H101)</b>";
+                } else if (matchingCourses[i] === "Robotics: Dynamics and Control") {
+                    matchingCourses[i] = "Robotics: Dynamics and Control <b>(H102)</b>";
+                } else if (matchingCourses[i] === "Product Management 101 (H1)") {
+                    matchingCourses[i] = "Product Management 101 (H1) <b>(H202)</b>";
+                } else if (matchingCourses[i] === "Business Fundamentals") {
+                    matchingCourses[i] = "Business Fundamentals <b>(N119)</b>";
+                } else if (matchingCourses[i] === "Embedded Systems Workshop (ESW) (H)") {
+                    matchingCourses[i] = "Embedded Systems Workshop (ESW) (H) <b>(H205)</b>";   
+                }  else if (matchingCourses[i] === "Science Lab I (H1)") {
+                    matchingCourses[i] = "Science Lab I (H1) <b>(H301)</b>";   
+                } 
+                 else if (matchingCourses[i] === "User Research Methods (H2)") {
+                    matchingCourses[i] = "User Research Methods (H2) <b>(H201)</b>";
+                } else if (matchingCourses[i] === "Product Marketing") {
+                    matchingCourses[i] = "Product Marketing <b>(H302)</b>";
+                }
+            }
+
+        
+
+                    cell.innerHTML = matchingCourses.join(', ');
+                }
+
+          
+        });
+    });
+
+    const timetableContainer = document.getElementById('timetableContainer');
+    timetableContainer.innerHTML = dom.body.innerHTML;
+
+
+
+    document.getElementById('screenshotButton').style.display = 'inline-block';
+}
+
+
+  
+// Add event listener to trigger the generateInputFields function on Enter key press
+document.getElementById('numCourses').addEventListener('keypress', function (event) {
+    if (event.key === 'Enter') { // Check if the Enter key is pressed
+        event.preventDefault(); // Prevent default form submission
+        document.getElementById('generateFieldsButton').click(); // Programmatically click the button
+    }
+});
+
+
+
+
+
+document.getElementById('screenshotButton').addEventListener('click', function () {
+    const timetableContainer = document.getElementById('timetableContainer');
+
+    // Create a full-width clone of the timetable container
+    const clone = timetableContainer.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.width = 'auto'; // Ensure the width is auto to fit the content
+    clone.style.maxWidth = 'none'; // Remove any width restrictions
+    clone.style.overflow = 'visible'; // Make sure overflow is visible
+
+    document.body.appendChild(clone);
+
+    // Ensure the clone container is sized to fit the entire content
+    const cloneRect = clone.getBoundingClientRect();
+    clone.style.width = `${cloneRect.width}px`; // Set the width to the full width of the content
+    clone.style.height = `${cloneRect.height}px`; // Set the height to the full height of the content
+
+    html2canvas(clone, { 
+        scrollX: 0, 
+        scrollY: -window.scrollY,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null // Set background color to null to handle transparent backgrounds
+    }).then(canvas => {
+        document.body.removeChild(clone); // Clean up the clone after capturing
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save('timetable.pdf');
+    });
+});
+
+
+
+
+    
+</script>
+</body>
+</html>
